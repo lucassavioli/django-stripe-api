@@ -1,7 +1,11 @@
 import stripe
 import os
+from django.conf import settings
 from dotenv import load_dotenv
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework.views import APIView
+from django.shortcuts import redirect
 
 load_dotenv()
 
@@ -20,10 +24,14 @@ class StripeCheckoutView(APIView):
                 ],
                 payment_method_types=["card"],
                 mode="payment",
-                success_url=YOUR_DOMAIN + "?success=true",
-                cancel_url=YOUR_DOMAIN + "?canceled=true",
+                success_url=settings.SITE_URL
+                + "/?success=true&session_id={CHECKOUT_SESSION_ID}",
+                cancel_url=settings.SITE_URL + "/?canceled=true",
             )
-        except Exception as e:
-            return str(e)
+            return redirect(checkout_session.url)
 
-        return redirect(checkout_session.url, code=303)
+        except:
+            return Response(
+                {"error": "Somenthing went wrong when creating the checkout session"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
